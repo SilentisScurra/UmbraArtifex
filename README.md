@@ -5,9 +5,8 @@
 Umbra Artifex is a lightweight, web-based fantasy console (inspired by PICO-8 and TIC-80) contained entirely within a single HTML file. It features a complete development environment including a code editor, sprite editor, and map editor, all running without any external dependencies or libraries.
 
 ![Screenshot of the Editor](screenshot_editor.png)
-*(Place a screenshot of your editor here)*
 
-## 🚀 Features
+## Features
 
 Everything is built from the ground up using vanilla JavaScript, HTML, and CSS.
 
@@ -33,12 +32,12 @@ Everything is built from the ground up using vanilla JavaScript, HTML, and CSS.
 3.  **Code:** Write your game logic in the Code tab.
 4.  **Run Game:** Type `run` in the terminal or click the Run button.
 
-## 📝 The Language
+## The Language
 
 The engine uses a C-like syntax that is transpiled to JavaScript at runtime. You can use types like `void`, `int`, `float`, and `string`.
 
 **Example:**
-```c
+```us
 // Define variables
 float x = 60;
 float y = 60;
