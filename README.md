@@ -12,6 +12,7 @@ Everything is built from the ground up using vanilla JavaScript, HTML, and CSS.
 
 * **All-in-One Architecture:** The IDE and the Runtime are in one file.
 * **Code Editor:**
+    * There is some scrolling issues here and comments are a bit buggy
     * Custom Syntax Highlighting (C-style syntax that transpiles to JS).
     * Auto-indentation and bracket auto-closing.
     * Multi-tab support for organizing scripts.
@@ -25,7 +26,7 @@ Everything is built from the ground up using vanilla JavaScript, HTML, and CSS.
     * Synthesized Audio API (Oscillators).
     * **Export to HTML:** Turn your game into a single standalone file to share with friends.
 
-## 🛠️ How to Use
+## How to Use
 
 1.  **Download:** simply download the `index.html` file.
 2.  **Run:** Open it in any modern web browser (Chrome, Firefox, Edge).
