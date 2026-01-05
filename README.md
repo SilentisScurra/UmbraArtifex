@@ -4,7 +4,7 @@
 
 Umbra Artifex is a lightweight, web-based fantasy console (inspired by PICO-8 and TIC-80) contained entirely within a single HTML file. It features a complete development environment including a code editor, sprite editor, and map editor, all running without any external dependencies or libraries.
 
-![Screenshot of the Editor](screenshot_editor.png)
+![Screenshot of the Editor](Screenshot_editor.png)
 
 ## Features
 
