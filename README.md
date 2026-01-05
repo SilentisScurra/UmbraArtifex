@@ -55,6 +55,6 @@ void Update() {
 
 // Handles rendering
 void Draw() {
-    Graphics.Clear(0); // Clear screen black
-    Graphics.Sprite(0, x, y); // Draw player
+    Graphics.Clear(1); 
+    Graphics.Sprite(0, x, y);
 }
