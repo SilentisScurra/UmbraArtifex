@@ -2,653 +2,101 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Umbra Artifex // v6.7</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign in - VS Code</title>
+    <script src="users.js"></script>
     <style>
         :root {
-            /* --- UI COLORS --- */
-            --bg-dark: #1e1e1e;
-            --bg-panel: #252526;
-            --bg-gutter: #1e1e1e;
-            --bg-header: #333333;
-            --border: #3e3e42;
+            --bg-body: #1e1e1e;
+            --bg-card: #252526;
+            --border: #454545;
             --accent: #007acc;
-            --text-main: #d4d4d4;
-
-            /* --- SYNTAX COLORS --- */
-            --tok-kw: #569cd6; --tok-fn: #dcdcaa; --tok-str: #ce9178;
-            --tok-num: #b5cea8; --tok-com: #6a9955; --tok-typ: #4ec9b0;
-
-            --font-code: 'Consolas', 'Monaco', 'Courier New', monospace;
-            --font-size: 14px; --line-height: 20px;
+            --text-main: #cccccc;
+            --error: #f48771;
         }
 
-        * { box-sizing: border-box; outline: none; user-select: none; }
-        
         body {
-            margin: 0; padding: 0; background-color: var(--bg-dark); color: var(--text-main);
-            font-family: 'Segoe UI', sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden;
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+            display: flex; justify-content: center; align-items: center;
+            height: 100vh; margin: 0;
         }
 
-        /* --- START SCREEN --- */
-        #start-screen {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #111; z-index: 5000;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-        }
-        .logo-area { text-align: center; margin-bottom: 40px; }
-        .logo-main { font-family: var(--font-code); font-size: 40px; color: var(--accent); letter-spacing: 2px; font-weight: bold; margin-bottom: 10px; }
-        .logo-sub { color: #666; font-size: 14px; letter-spacing: 1px; }
-        .start-btn { 
-            background: #252526; border: 1px solid #444; color: #ccc; padding: 15px 40px; 
-            margin: 10px; font-size: 16px; cursor: pointer; width: 250px; text-align: center; transition: 0.2s;
-        }
-        .start-btn:hover { border-color: var(--accent); color: #fff; background: #333; }
-
-        /* --- MENUBAR --- */
-        #menubar {
-            height: 35px; background: var(--bg-header); display: flex; align-items: center;
-            padding: 0 10px; font-size: 13px; border-bottom: 1px solid var(--border); justify-content: space-between;
-        }
-        .menu-left { display: flex; align-items: center; gap: 15px; }
-        .menu-right { display: flex; height: 100%; }
-
-        .menu-btn { cursor: pointer; color: #ccc; position: relative; padding: 5px 8px; }
-        .menu-btn:hover { background: #444; color: #fff; border-radius: 4px; }
-        
-        .nav-tab {
-            padding: 0 15px; cursor: pointer; color: #888; font-weight: 600; font-size: 12px; 
-            text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 3px solid transparent;
-            height: 100%; display: flex; align-items: center; transition: all 0.2s;
-        }
-        .nav-tab:hover { color: #fff; background: rgba(255,255,255,0.05); }
-        .nav-tab.active { color: var(--accent); border-bottom-color: var(--accent); background: #252526; }
-
-        .dropdown {
-            position: absolute; top: 100%; left: 0; background: #252526; border: 1px solid var(--border);
-            min-width: 180px; display: none; flex-direction: column; box-shadow: 0 4px 10px rgba(0,0,0,0.5); z-index: 1000;
-        }
-        .dropdown.show { display: flex; }
-        .dd-item { padding: 8px 15px; cursor: pointer; font-size: 13px; color: #ccc; border-bottom: 1px solid #333; }
-        .dd-item:hover { background: var(--accent); color: #fff; }
-
-        /* --- LAYOUT --- */
-        #main-interface { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
-        .view-panel { width: 100%; height: 100%; display: none; flex-direction: column; }
-        .view-panel.visible { display: flex; }
-
-        /* --- EDITOR --- */
-		#script-tabs-container { height: 35px; background: #252526; display: flex; align-items: center; overflow-x: auto; border-bottom: 1px solid var(--border); }
-		.file-tab { padding: 0 15px; height: 100%; display: flex; align-items: center; background: #2d2d2d; color: #999; border-right: 1px solid #333; cursor: pointer; font-size: 13px; min-width: 100px; justify-content: space-between; border-top: 2px solid transparent; }
-		.file-tab.active { background: #1e1e1e; color: #fff; border-top-color: var(--accent); }
-		.close-tab { margin-left: 10px; font-size: 14px; opacity: 0; width:16px; text-align:center; border-radius:50%; }
-		.file-tab:hover .close-tab { opacity: 1; }
-
-		#editor-wrapper { flex: 1; position: relative; display: flex; overflow: hidden; background: var(--bg-dark); }
-		.gutter { width: 45px; background: var(--bg-gutter); color: #555; text-align: right; padding: 10px 10px 10px 0; border-right: 1px solid #333; font-family: var(--font-code); font-size: var(--font-size); line-height: var(--line-height); overflow: hidden; }
-
-		/* FIX: The container hides overflow, the textarea handles scrolling */
-		.editor-container { position: relative; flex: 1; overflow: hidden; }
-		.code-layer, .highlight-layer { position: absolute; top: 0; left: 0; margin: 0; padding: 10px; border: 0; width: 100%; height: 100%; font-family: var(--font-code); font-size: var(--font-size); line-height: var(--line-height); white-space: pre; tab-size: 4; }
-
-		/* FIX: Textarea is transparent but handles interaction & scrolling */
-		.code-layer { z-index: 2; color: transparent; background: transparent; caret-color: #fff; resize: none; outline: none; overflow: auto; }
-		.code-layer::selection { background: rgba(0, 122, 204, 0.4); color: transparent; }
-		.highlight-layer { z-index: 1; color: var(--text-main); pointer-events: none; overflow: hidden; }
-
-		/* SYNTAX COLORS */
-		.s-kw { color: var(--tok-kw); font-weight: bold; }
-		.s-fn { color: var(--tok-fn); }
-		.s-str { color: var(--tok-str); }
-		.s-num { color: var(--tok-num); }
-		.s-com { color: var(--tok-com); font-style: italic; }
-		.s-typ { color: var(--tok-typ); }
-
-        /* --- GRAPHICAL TOOLS --- */
-        .tool-layout { display: flex; width: 100%; height: 100%; }
-        .tool-sidebar { width: 300px; background: var(--bg-panel); border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 10px; gap: 15px; overflow-y: auto; }
-        .tool-canvas-area { flex: 1; background: #111; display: flex; justify-content: center; align-items: center; overflow: hidden; position: relative; }
-        
-        /* Fixed pixelated canvas for editing */
-        .edit-canvas {
-            background-color: #000;
-            box-shadow: 0 0 20px #000;
-            cursor: crosshair;
-            /* No CSS Scaling - We draw big pixels manually */
+        .login-card {
+            background-color: var(--bg-card);
+            padding: 48px 40px 36px;
+            border-radius: 8px;
+            width: 450px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            display: flex; flex-direction: column; align-items: center; text-align: center;
         }
 
-        .palette-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 2px; }
-        .swatch { aspect-ratio: 1; border: 1px solid #000; cursor: pointer; position: relative; }
-        .swatch:hover { z-index:10; border:1px solid #fff; }
-        .swatch.active { border: 2px solid #fff; z-index: 2; transform: scale(1.1); box-shadow: 0 0 5px rgba(0,0,0,0.5); }
+        /* VS Code Logo Shape */
+        .logo {
+            width: 50px; height: 50px; background-color: var(--accent);
+            clip-path: polygon(15% 0, 100% 50%, 15% 100%, 0 85%, 0 15%);
+            margin-bottom: 20px;
+        }
 
-        .sheet-tabs { display: flex; gap: 2px; margin-bottom: 5px; }
-        .sheet-tab { flex: 1; text-align: center; background: #333; color: #888; padding: 4px; font-size: 11px; cursor: pointer; border-radius: 4px 4px 0 0; }
-        .sheet-tab.active { background: #444; color: #fff; font-weight: bold; }
-        
-        .size-controls { display: flex; gap: 5px; margin-top: 5px; }
-        .size-btn { flex: 1; background: #333; color: #ccc; border: 1px solid #444; padding: 4px; font-size: 10px; cursor: pointer; text-align: center; }
-        .size-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
-        
-        .tool-help { font-size:11px; color:#666; margin-top:20px; line-height: 1.5; }
+        h1 { color: #fff; font-weight: 500; margin: 0 0 10px 0; }
+        .subtitle { margin-bottom: 40px; }
 
-        /* --- MANUAL STYLES --- */
-        .manual-wrapper { display: flex; flex-direction: column; height: 100%; background: #1e1e1e; }
-        .manual-tabs { display: flex; background: #252526; border-bottom: 1px solid var(--border); padding: 0 10px; }
-        .doc-tab { padding: 10px 20px; font-size: 12px; cursor: pointer; color: #888; font-weight: bold; border-bottom: 2px solid transparent; transition: 0.2s; }
-        .doc-tab:hover { color: #fff; }
-        .doc-tab.active { color: var(--accent); border-bottom-color: var(--accent); background: rgba(255,255,255,0.05); }
-        .doc-content { flex: 1; overflow-y: auto; padding: 40px; max-width: 900px; margin: 0 auto; width: 100%; }
-        .doc-section { display: none; animation: fadeIn 0.2s; }
-        .doc-section.visible { display: block; }
-        .doc-h1 { font-size: 28px; color: var(--accent); margin-bottom: 10px; border-bottom: 1px solid #333; padding-bottom: 15px; }
-        .doc-h2 { font-size: 20px; color: #fff; margin-top: 40px; margin-bottom: 15px; border-left: 3px solid var(--accent); padding-left: 10px; }
-        .doc-code-block { background: #111; padding: 15px; border-radius: 4px; font-family: var(--font-code); color: #d4d4d4; font-size: 13px; border: 1px solid #333; margin: 15px 0; white-space: pre-wrap; }
-        .doc-inline { background: #2d2d2d; padding: 2px 6px; font-family: var(--font-code); color: #ce9178; border-radius: 3px; font-size: 0.9em; }
-        @keyframes fadeIn { from { opacity:0; transform:translateY(5px); } to { opacity:1; transform:translateY(0); } }
+        input {
+            width: 100%; padding: 13px 15px; margin-bottom: 15px;
+            background-color: var(--bg-body); border: 1px solid var(--border);
+            border-radius: 4px; color: #fff; font-size: 16px; box-sizing: border-box;
+        }
+        input:focus { outline: none; border: 2px solid var(--accent); padding: 12px 14px; }
 
-        /* --- TERMINAL --- */
-        #terminal-panel { height: 150px; background: var(--bg-panel); border-top: 1px solid var(--border); display: flex; flex-direction: column; font-family: var(--font-code); font-size: 13px; }
-        #terminal-out { flex: 1; overflow-y: auto; padding: 10px; color: #ccc; user-select: text;}
-        #terminal-in { background: #1e1e1e; border: none; color: #fff; font-family: inherit; padding: 5px 10px; border-top:1px solid #333; }
+        button {
+            background-color: var(--accent); color: white; border: none;
+            padding: 10px 24px; border-radius: 4px; font-weight: bold; cursor: pointer;
+            margin-top: 20px; width: 100px;
+        }
+        button:hover { background-color: #005a9e; }
 
-        /* --- RUNTIME OVERLAY --- */
-        #runtime-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #050505; z-index: 3000; display: none; flex-direction: column; align-items: center; justify-content: center; outline: none; }
-        #virtual-screen { width: 512px; height: 512px; border: 1px solid #333; background: #000; image-rendering: pixelated; image-rendering: crisp-edges; }
+        .error-msg { color: var(--error); display: none; margin-top: 10px; }
     </style>
 </head>
 <body>
 
-    <div id="start-screen">
-        <div class="logo-area">
-            <div class="logo-main">UMBRA ARTIFEX</div>
-            <div class="logo-sub">CREATIVE FANTASY COMPUTER v6.7</div>
-        </div>
-        <div class="start-btn" onclick="project.new()">New Project</div>
-        <div class="start-btn" onclick="document.getElementById('file-upload').click()">Open Project</div>
-        <input type="file" id="file-upload" style="display:none" onchange="project.loadFromFile(this)">
-    </div>
+    <div class="login-card" id="loginCard">
+        <div class="logo"></div>
+        <h1>Sign in</h1>
+        <div class="subtitle">to continue to Umbra Artifex</div>
 
-    <div id="menubar">
-        <div class="menu-left">
-            <div class="menu-btn" onclick="ui.toggleDD('file-menu')">File
-                <div class="dropdown" id="file-menu">
-                    <div class="dd-item" onclick="editor.addScript()">New Script</div>
-                    <div class="dd-item" onclick="project.rename()">Rename Project</div>
-                    <div class="dd-item" onclick="project.save()">Save Project (.uap)</div>
-                    <div class="dd-item" onclick="project.export()">Export Game (.html)</div>
-                    <div class="dd-item" onclick="project.close()">Close Project</div>
-                </div>
-            </div>
-            <div class="menu-btn" onclick="ui.toggleDD('pref-menu')">Preferences
-                <div class="dropdown" id="pref-menu">
-                    <div class="dd-item" onclick="ui.toggleGrid()">Toggle Grid</div>
-                </div>
-            </div>
-            <span style="color:#666; font-size:11px; margin-left:10px;" id="project-label">Untitled</span>
+        <input type="text" id="username" placeholder="Username">
+        <input type="password" id="password" placeholder="Password">
+        
+        <div id="errorMsg" class="error-msg">⚠ Invalid credentials</div>
+        
+        <div style="width:100%; display:flex; justify-content:flex-end;">
+            <button onclick="handleLogin()">Next</button>
         </div>
-        <div class="menu-right">
-            <div class="nav-tab active" id="nav-script" onclick="ui.switchView('script')">Script</div>
-            <div class="nav-tab" id="nav-sprite" onclick="ui.switchView('sprite')">Sprite</div>
-            <div class="nav-tab" id="nav-map" onclick="ui.switchView('map')">Map</div>
-            <div class="nav-tab" id="nav-manual" onclick="ui.switchView('manual')">Manual</div>
-        </div>
-    </div>
-
-    <div id="main-interface">
-        <div id="view-script" class="view-panel visible">
-            <div id="script-tabs-container"></div>
-            <div id="editor-wrapper">
-				<div class="gutter" id="code-gutter">1</div>
-				<div class="editor-container">
-					<pre class="highlight-layer" id="code-highlight"></pre>
-					<textarea class="code-layer" id="code-input" spellcheck="false" 
-						onscroll="editor.onScroll(this)" 
-						oninput="editor.onInput()" 
-						onkeydown="editor.onKey(event)"></textarea>
-				</div>
-			</div>
-        </div>
-        <div id="view-sprite" class="view-panel"></div>
-        <div id="view-map" class="view-panel"></div>
-        <div id="view-manual" class="view-panel">
-            <div class="manual-wrapper">
-                <div class="manual-tabs">
-                    <div class="doc-tab active" onclick="ui.docTab('overview', this)">Overview</div>
-                    <div class="doc-tab" onclick="ui.docTab('scripting', this)">Scripting</div>
-                    <div class="doc-tab" onclick="ui.docTab('api', this)">API Reference</div>
-                </div>
-                <div class="doc-content">
-                    <div id="doc-overview" class="doc-section visible">
-                        <div class="doc-h1">Umbra Artifex v6.7</div>
-                        <p style="color:#ccc">New in v6.7: High-Def Sprite Grid (Crisp Pixels).</p>
-                    </div>
-                    <div id="doc-scripting" class="doc-section">
-                        <div class="doc-h1">Scripting</div>
-                        <div class="doc-code-block">void Draw() { 
-    // Draw sprite ID 2, at 50,50
-    // Scale 1, Size 2 (Draws a 2x2 tile block)
-    Graphics.Sprite(2, 50, 50, 1, 2); 
-}</div>
-                    </div>
-                    <div id="doc-api" class="doc-section">
-                        <div class="doc-h1">API</div>
-                        <div class="doc-h2">Graphics.Sprite(id, x, y, scale, size)</div>
-                        <ul>
-                            <li><span class="doc-inline">id</span>: Top-left sprite index (0-767).</li>
-                            <li><span class="doc-inline">size</span>: Width/Height in tiles (1=8px, 2=16px, 4=32px).</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div id="terminal-panel">
-        <div id="terminal-out"></div>
-        <input type="text" id="terminal-in" placeholder="> Type 'run' to start..." onkeydown="if(event.key==='Enter') vm.cmd(this)">
-    </div>
-
-    <div id="runtime-overlay" tabindex="0">
-        <canvas id="virtual-screen" width="128" height="128"></canvas>
-        <div style="margin-top:10px; color:#666; font-family:var(--font-code); font-size:12px;">[ESC] to Stop</div>
     </div>
 
     <script>
-        const COLORS = ['#00000000', '#000000', '#1D2B53', '#7E2553', '#008751', '#AB5236', '#5F574F', '#C2C3C7','#FFF1E8', '#FF004D', '#FFA300', '#FFEC27', '#00E436', '#29ADFF', '#83769C', '#FF77A8','#FFCCAA', '#292929', '#555555', '#888888', '#aaaaaa', '#dfe0e8', '#690505', '#24523b','#102840', '#cf752b', '#ffd93f', '#94e044', '#5169a8', '#895a45', '#4d2d32', '#ffffff'];
-        const FONT = {'A':[2,5,7,5,5],'B':[6,5,6,5,6],'C':[3,4,4,4,3],'D':[6,5,5,5,6],'E':[7,4,6,4,7],'F':[7,4,6,4,4],'G':[3,4,5,5,3],'H':[5,5,7,5,5],'I':[7,2,2,2,7],'J':[1,1,1,5,2],'K':[5,5,6,5,5],'L':[4,4,4,4,7],'M':[5,7,5,5,5],'N':[6,5,5,5,5],'O':[2,5,5,5,2],'P':[6,5,6,4,4],'Q':[2,5,5,6,3],'R':[6,5,6,5,5],'S':[3,4,2,1,7],'T':[7,2,2,2,2],'U':[5,5,5,5,7],'V':[5,5,5,5,2],'W':[5,5,5,7,5],'X':[5,5,2,5,5],'Y':[5,5,2,2,2],'Z':[7,1,2,4,7],'0':[2,5,5,5,2],'1':[2,6,2,2,7],'2':[6,1,2,4,7],'3':[6,1,2,1,6],'4':[5,5,7,1,1],'5':[7,4,6,1,6],'6':[3,4,7,5,2],'7':[7,1,2,2,2],'8':[2,5,2,5,2],'9':[2,5,3,1,2],'.':[0,0,0,0,1],',':[0,0,0,1,2],'!':[2,2,2,0,2],'?':[6,1,2,0,2],'-':[0,0,7,0,0],'+':[0,2,7,2,0],'=':[0,7,0,7,0],':':[0,2,0,2,0],' ':[0,0,0,0,0]};
+        function handleLogin() {
+            const userIn = document.getElementById('username').value;
+            const passIn = document.getElementById('password').value;
+            const errorDiv = document.getElementById('errorMsg');
 
-        let PROJECT = null;
-        const DEFAULT_PROJ = {
-            name: "NewProject",
-            scripts: [{name: "Main", content: "// Main Script\n\nvoid Draw() {\n    Graphics.Clear(1);\n    Graphics.Text(\"READY\", 50, 60, 11);\n}"}],
-            sprites: new Array(128*128*3).fill(0), 
-            map: new Array(64*32).fill(0)
-        };
-
-        const STATE = { 
-            activeScript: 0, brush: 2, brushSprite: 0, sprPage: 0, sprSize: 1, 
-            sprZoom: 32, // Software Zoom: 1 sprite pixel = 32 screen pixels
-            mapZoom: 2, mapPanX: 0, mapPanY: 0, 
-            dragIdx: null, grid: true 
-        };
-
-        const ui = {
-            init: () => {
-                ui.initTools();
-                if(PROJECT) {
-                    ui.renderScriptTabs();
-                    editor.load(0);
-                    document.getElementById('project-label').innerText = PROJECT.name;
-                    ui.log("Umbra Artifex v6.7 Ready.");
-                    document.getElementById('start-screen').style.display = 'none';
-                    if(document.getElementById('view-sprite').innerHTML === "") ui.initTools();
-                }
-            },
-            toggleDD: (id) => {
-                const el = document.getElementById(id); el.classList.toggle('show');
-                window.onclick = e => { if(!e.target.matches('.menu-btn')) el.classList.remove('show'); };
-            },
-            toggleGrid: () => { STATE.grid = !STATE.grid; gfx.redrawSprite(); },
-            switchView: (v) => {
-                document.querySelectorAll('.view-panel').forEach(e=>e.classList.remove('visible'));
-                document.getElementById('view-'+v).classList.add('visible');
-                document.querySelectorAll('.nav-tab').forEach(e=>e.classList.remove('active'));
-                document.getElementById('nav-'+v).classList.add('active');
-                if(v==='sprite') gfx.redrawSprite(); 
-                if(v==='map') gfx.redrawMap();
-            },
-            docTab: (tabId, btn) => {
-                document.querySelectorAll('.doc-section').forEach(s => s.classList.remove('visible'));
-                document.getElementById('doc-'+tabId).classList.add('visible');
-                document.querySelectorAll('.doc-tab').forEach(t => t.classList.remove('active'));
-                btn.classList.add('active');
-            },
-            renderScriptTabs: () => {
-                const c = document.getElementById('script-tabs-container'); c.innerHTML = '';
-                PROJECT.scripts.forEach((s,i) => {
-                    const el = document.createElement('div'); el.className = `file-tab ${i===STATE.activeScript?'active':''}`;
-                    el.draggable = true;
-                    el.innerHTML = `<span>${s.name}</span> <span class="close-tab" onclick="editor.close(${i}, event)">×</span>`;
-                    el.onclick = () => editor.load(i);
-                    el.ondragstart = () => { STATE.dragIdx = i; };
-                    el.ondragover = e => e.preventDefault();
-                    el.ondrop = e => { e.preventDefault(); if(STATE.dragIdx===null||STATE.dragIdx===i)return; const t=PROJECT.scripts[STATE.dragIdx]; PROJECT.scripts.splice(STATE.dragIdx,1); PROJECT.scripts.splice(i,0,t); STATE.activeScript=i; ui.renderScriptTabs(); };
-                    c.appendChild(el);
-                });
-            },
-            initTools: () => {
-                if(document.getElementById('spr-pal')) return;
-                
-                // Sprite View Layout
-                const sprHTML = `
-                <div class="tool-layout">
-                    <div class="tool-sidebar">
-                        <b style="font-size:11px;color:#666">32-COLOR PALETTE</b>
-                        <div class="palette-grid" id="spr-pal"></div>
-                        <div style="margin-top:20px"><b style="font-size:11px;color:#666">SPRITE SHEETS</b></div>
-                        <div class="sheet-tabs" id="sheet-tabs">
-                            <div class="sheet-tab active" onclick="ui.setSheet(0)">SHEET 0</div>
-                            <div class="sheet-tab" onclick="ui.setSheet(1)">SHEET 1</div>
-                            <div class="sheet-tab" onclick="ui.setSheet(2)">SHEET 2</div>
-                        </div>
-                        <canvas id="spr-sheet" width="128" height="128" style="width:256px; image-rendering:pixelated; border:1px solid #444; cursor:pointer"></canvas>
-                        <div class="size-controls">
-                            <div class="size-btn active" id="sz-1" onclick="ui.setSize(1)">1x1 (8px)</div>
-                            <div class="size-btn" id="sz-2" onclick="ui.setSize(2)">2x2 (16px)</div>
-                            <div class="size-btn" id="sz-4" onclick="ui.setSize(4)">4x4 (32px)</div>
-                        </div>
-                        <div class="tool-help">Mouse Wheel: Zoom<br>Hold Ctrl: Fine Zoom</div>
-                    </div>
-                    <div class="tool-canvas-area" id="spr-area">
-                        <canvas id="spr-can" width="512" height="512" class="edit-canvas"></canvas>
-                    </div>
-                </div>`;
-                
-                document.getElementById('view-sprite').innerHTML = sprHTML;
-                document.getElementById('view-map').innerHTML = `<div class="tool-layout"><div class="tool-sidebar"><b style="font-size:11px;color:#666">TILE SELECTOR</b><canvas id="map-sheet" width="128" height="128" style="width:256px; image-rendering:pixelated; border:1px solid #444; cursor:pointer"></canvas><div class="tool-help">Pan: Space + Drag<br>Zoom: Ctrl + Scroll</div></div><div class="tool-canvas-area" id="map-area"><canvas id="map-can" width="512" height="256" style="image-rendering:pixelated;box-shadow:0 0 20px #000;cursor:crosshair;transform-origin:center;transition:transform 0.05s"></canvas></div></div>`;
-                
-                const p = document.getElementById('spr-pal');
-                COLORS.forEach((c,i)=>{
-                    const d = document.createElement('div'); d.className='swatch'; d.id='swatch-'+i;
-                    if(i===0) { d.innerText='x'; d.style.color='#555'; d.style.background='#111'; } else { d.style.background=c; }
-                    d.style.display='flex'; d.style.justifyContent='center'; d.style.alignItems='center'; d.style.fontSize='10px';
-                    d.onclick=()=>{ STATE.brush=i; document.querySelectorAll('.swatch').forEach(s=>s.classList.remove('active')); document.getElementById('swatch-'+i).classList.add('active'); };
-                    if(STATE.brush===i)d.classList.add('active'); p.appendChild(d);
-                });
-                ui.bindGraphicsEvents();
-            },
-            setSheet: (n) => {
-                STATE.sprPage = n;
-                document.querySelectorAll('.sheet-tab').forEach((el, i) => { if(i===n) el.classList.add('active'); else el.classList.remove('active'); });
-                STATE.brushSprite = n * 256; 
-                gfx.redrawSprite();
-            },
-            setSize: (s) => {
-                STATE.sprSize = s;
-                document.querySelectorAll('.size-btn').forEach(el=>el.classList.remove('active'));
-                document.getElementById('sz-'+s).classList.add('active');
-                gfx.redrawSprite();
-            },
-            bindGraphicsEvents: () => {
-                // SPRITE EDITOR EVENTS
-                const sc = document.getElementById('spr-can');
-                
-                sc.onwheel = e => { 
-                    e.preventDefault(); 
-                    const delta = e.deltaY > 0 ? -4 : 4;
-                    STATE.sprZoom = Math.max(4, Math.min(64, STATE.sprZoom + delta));
-                    gfx.redrawSprite(); 
-                };
-                
-                const paint = (e) => {
-                    const r = sc.getBoundingClientRect(); 
-                    // Calculate based on Software Zoom
-                    const x = Math.floor((e.clientX - r.left) / STATE.sprZoom);
-                    const y = Math.floor((e.clientY - r.top) / STATE.sprZoom);
-                    
-                    // Bounds check based on current sprite size
-                    if(x >= 0 && x < (STATE.sprSize*8) && y >= 0 && y < (STATE.sprSize*8)) { 
-                        const tileX = Math.floor(x / 8); const tileY = Math.floor(y / 8);
-                        const pixelX = x % 8; const pixelY = y % 8;
-                        const targetId = STATE.brushSprite + (tileY * 16) + tileX;
-                        gfx.setPixel(targetId, pixelX, pixelY, STATE.brush);
-                        gfx.redrawSprite(); 
-                    }
-                };
-
-                sc.onmousedown=e=> { paint(e); };
-                sc.onmousemove=e=>{ if(e.buttons===1) paint(e); };
-                
-                // MAP EDITOR EVENTS (Legacy Logic kept for Map)
-                const mc = document.getElementById('map-can'); const ma = document.getElementById('map-area');
-                ma.onwheel = e => { if(e.ctrlKey){ e.preventDefault(); STATE.mapZoom += e.deltaY > 0 ? -0.5 : 0.5; STATE.mapZoom = Math.max(0.5, STATE.mapZoom); gfx.updMapTrans(); } };
-                let isMapPan=false; 
-                window.onkeydown = e => { if(e.code==='Space'){ isMapPan=true; ma.style.cursor='grab'; } }; 
-                window.onkeyup = e => { if(e.code==='Space'){ isMapPan=false; ma.style.cursor='default'; } };
-
-                const pick = (e) => { 
-                    const r=e.target.getBoundingClientRect(); 
-                    const x = Math.floor((e.clientX-r.left)/16); 
-                    const y = Math.floor((e.clientY-r.top)/16); 
-                    STATE.brushSprite = (STATE.sprPage * 256) + (y*16 + x); 
-                    gfx.redrawSprite(); gfx.redrawMap(); 
-                };
-                document.getElementById('spr-sheet').onclick=pick; document.getElementById('map-sheet').onclick=pick;
-
-                mc.onmousedown = e => { if(!isMapPan){ const r=mc.getBoundingClientRect(); const tx=Math.floor((e.clientX-r.left)/(STATE.mapZoom*8)); const ty=Math.floor((e.clientY-r.top)/(STATE.mapZoom*8)); if(tx>=0&&tx<64&&ty>=0&&ty<32) { PROJECT.map[ty*64+tx]=(e.buttons===2)?0:STATE.brushSprite; gfx.redrawMap(); } } };
-                mc.onmousemove = e => { if(isMapPan && e.buttons===1){ STATE.mapPanX+=e.movementX; STATE.mapPanY+=e.movementY; gfx.updMapTrans(); } else if(e.buttons===1 && !isMapPan) { mc.onmousedown(e); } };
-            },
-            log: (m) => { const t=document.getElementById('terminal-out'); t.innerHTML+=`<div>${m}</div>`; t.scrollTop=t.scrollHeight; }
-        };
-
-        const gfx = {
-            setPixel: (id, x, y, c) => {
-                if(id >= PROJECT.sprites.length/64) return;
-                const sheet = Math.floor(id / 256); const localId = id % 256;
-                const sheetX = (localId % 16) * 8 + x; const sheetY = Math.floor(localId / 16) * 8 + y;
-                const globalIdx = (sheet * 16384) + (sheetY * 128 + sheetX);
-                if(globalIdx < PROJECT.sprites.length) PROJECT.sprites[globalIdx] = c;
-            },
-            getPixel: (id, x, y) => {
-                const sheet = Math.floor(id / 256); const localId = id % 256;
-                const sheetX = (localId % 16) * 8 + x; const sheetY = Math.floor(localId / 16) * 8 + y;
-                return PROJECT.sprites[(sheet * 16384) + (sheetY * 128 + sheetX)];
-            },
-            redrawSprite: () => {
-                const can = document.getElementById('spr-can');
-                if(!can) return;
-                const ctx = can.getContext('2d');
-                // Adjust Canvas Display Size to fit the grid perfectly
-                const displayW = STATE.sprSize * 8 * STATE.sprZoom;
-                can.width = displayW; can.height = displayW; 
-                can.style.width = displayW + "px"; can.style.height = displayW + "px";
-
-                ctx.fillStyle = '#111'; ctx.fillRect(0,0,can.width,can.height);
-
-                for(let ty=0; ty<STATE.sprSize; ty++) {
-                    for(let tx=0; tx<STATE.sprSize; tx++) {
-                        const subId = STATE.brushSprite + (ty*16) + tx;
-                        for(let py=0; py<8; py++) {
-                            for(let px=0; px<8; px++) {
-                                const c = gfx.getPixel(subId, px, py);
-                                // Draw BIG rectangle for pixel
-                                const x = (tx*8 + px) * STATE.sprZoom;
-                                const y = (ty*8 + py) * STATE.sprZoom;
-                                ctx.fillStyle = c ? COLORS[c] : ((px+py)%2?'#222':'#333');
-                                ctx.fillRect(x, y, STATE.sprZoom, STATE.sprZoom);
-                                
-                                // Optional Grid
-                                if(STATE.grid) {
-                                    ctx.strokeStyle = '#333'; ctx.lineWidth = 1;
-                                    ctx.strokeRect(x,y,STATE.sprZoom, STATE.sprZoom);
-                                }
-                            }
-                        }
-                    }
-                }
-
-                // Update Sheet View
-                const sCtx = document.getElementById('spr-sheet').getContext('2d');
-                sCtx.clearRect(0,0,128,128); const buf = gfx.getBuffer(STATE.sprPage); sCtx.drawImage(buf, 0, 0);
-                if (Math.floor(STATE.brushSprite/256) === STATE.sprPage) {
-                    const localId = STATE.brushSprite % 256;
-                    const sx = (localId % 16) * 8; const sy = Math.floor(localId / 16) * 8;
-                    sCtx.strokeStyle = '#fff'; sCtx.lineWidth = 1; sCtx.strokeRect(sx, sy, STATE.sprSize*8, STATE.sprSize*8);
-                }
-            },
-            redrawMap: () => {
-                const ctx=document.getElementById('map-can').getContext('2d'); 
-                const bufs = [gfx.getBuffer(0), gfx.getBuffer(1), gfx.getBuffer(2)];
-                ctx.fillStyle='#111'; ctx.fillRect(0,0,512,256);
-                for(let y=0;y<32;y++)for(let x=0;x<64;x++){ 
-                    const t=PROJECT.map[y*64+x]; 
-                    if(t){
-                        const sheetIdx = Math.floor(t/256); const localId = t%256; const sx=(localId%16)*8, sy=(localId/16|0)*8;
-                        if(bufs[sheetIdx]) ctx.drawImage(bufs[sheetIdx],sx,sy,8,8,x*8,y*8,8,8);
-                    } 
-                }
-                ctx.strokeStyle='#222';ctx.beginPath();for(let x=0;x<=512;x+=8){ctx.moveTo(x,0);ctx.lineTo(x,256)}for(let y=0;y<=256;y+=8){ctx.moveTo(0,y);ctx.lineTo(512,y)}ctx.stroke();
-                const mCtx=document.getElementById('map-sheet').getContext('2d'); 
-                mCtx.clearRect(0,0,128,128); mCtx.drawImage(bufs[STATE.sprPage],0,0); 
-                const localId = STATE.brushSprite % 256;
-                if(Math.floor(STATE.brushSprite/256) === STATE.sprPage) {
-                    const sx=(localId%16)*8, sy=(localId/16|0)*8; 
-                    mCtx.strokeStyle='#fff'; mCtx.strokeRect(sx,sy,STATE.sprSize*8,STATE.sprSize*8); 
-                }
-                gfx.updMapTrans();
-            },
-            getBuffer: (page) => { 
-                const c=document.createElement('canvas');c.width=128;c.height=128; const x=c.getContext('2d'); const offset = page * 16384;
-                for(let i=0;i<16384;i++) { const col = PROJECT.sprites[offset+i]; if(col){ x.fillStyle=COLORS[col]; x.fillRect(i%128,(i/128)|0,1,1); } }
-                return c; 
-            },
-            updMapTrans: () => { 
-                const mc = document.getElementById('map-can'); if(mc) mc.style.transform=`translate(${STATE.mapPanX}px,${STATE.mapPanY}px) scale(${STATE.mapZoom})`;
+            if (typeof USERS_DB === 'undefined') {
+                alert("Error: users.js file missing!"); return;
             }
-        };
 
-        // --- DOCUMENTATION DATABASE ---
-        const DOCS = {
-            "Graphics.Sprite": "Graphics.Sprite(id, x, y, [scale=1], [size=1])",
-            "Graphics.Text": "Graphics.Text(string, x, y, color)",
-            "Graphics.Rect": "Graphics.Rect(x, y, w, h, color)",
-            "Graphics.Line": "Graphics.Line(x1, y1, x2, y2, color)",
-            "Graphics.Clear": "Graphics.Clear(color_index)",
-            "Map.Get": "Map.Get(x, y) -> tile_id",
-            "Map.Set": "Map.Set(x, y, tile_id)",
-            "Map.Draw": "Map.Draw(offset_x, offset_y)",
-            "Input.Key": "Input.Key(key_string) -> bool",
-            "Trace": "Trace(message)",
-            "Math.floor": "Math.floor(x)",
-            "Math.random": "Math.random() -> 0.0 to 1.0",
-            "Math.sin": "Math.sin(angle_radians)",
-            "Math.cos": "Math.cos(angle_radians)"
-        };
+            const user = USERS_DB.find(u => u.username === userIn && u.password === passIn);
 
-        const editor = {
-            load: (idx) => { if(STATE.activeScript!==idx)PROJECT.scripts[STATE.activeScript].content=document.getElementById('code-input').value; STATE.activeScript=idx; document.getElementById('code-input').value=PROJECT.scripts[idx].content; ui.renderScriptTabs(); editor.onInput(); },
-            addScript: () => { const n=prompt("Name:","Script"+PROJECT.scripts.length); if(n){PROJECT.scripts.push({name:n,content:""});ui.renderScriptTabs();editor.load(PROJECT.scripts.length-1);} },
-            close: (idx,e) => { e.stopPropagation(); if(PROJECT.scripts.length<=1)return alert("Keep one script."); if(confirm("Close?")){PROJECT.scripts.splice(idx,1);editor.load(Math.min(idx,PROJECT.scripts.length-1));} },
-            onInput: () => {
-                const text = document.getElementById('code-input').value;
-                const escape = (s) => s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
-                const parts = text.split(/(\/\/.*$|"(?:[^"\\]|\\.)*"|\b\d+\b|\b(?:void|int|float|string|bool|class|var|if|else|return|while|for|new|null)\b|\b[A-Z]\w*(?=\())/gm);
-                let html = ''; parts.forEach(p => { if(!p)return; if(p.startsWith('//')) html+=`<span class="s-com">${escape(p)}</span>`; else if(p.startsWith('"')) html+=`<span class="s-str">${escape(p)}</span>`; else if(/^\b\d+\b$/.test(p)) html+=`<span class="s-num">${p}</span>`; else if(/^(void|int|float|string|bool|class|var)$/.test(p)) html+=`<span class="s-typ">${p}</span>`; else if(/^(if|else|return|while|for|new|null)$/.test(p)) html+=`<span class="s-kw">${p}</span>`; else if(/^[A-Z]\w*$/.test(p)) html+=`<span class="s-fn">${p}</span>`; else html+=escape(p); });
-                if(text.endsWith('\n')) html+=' '; document.getElementById('code-highlight').innerHTML = html; document.getElementById('code-gutter').innerHTML = Array(text.split('\n').length).fill(0).map((_,i)=>i+1).join('<br>');
-            },
-            onScroll: (el) => { document.getElementById('code-highlight').scrollTop=el.scrollTop; document.getElementById('code-highlight').scrollLeft=el.scrollLeft; document.getElementById('code-gutter').scrollTop=el.scrollTop; },
-            onKey: (e) => { if(e.key==='Tab'){e.preventDefault();document.execCommand('insertText',false,'    ');} if(e.key==='Enter'){ e.preventDefault(); const c=e.target.selectionStart; const l=e.target.value.substring(0,c).split('\n').pop(); const i=l.match(/^\s*/)[0]; const x=l.trim().endsWith('{')?'    ':''; document.execCommand('insertText',false,'\n'+i+x); } },
-            
-            // --- NEW: Initialize Context Menu ---
-            initDocs: () => {
-                // Create Tooltip Element
-                if(!document.getElementById('doc-tooltip')) {
-                    const tt = document.createElement('div');
-                    tt.id = 'doc-tooltip';
-                    tt.style.cssText = "position:fixed; display:none; background:#333; border:1px solid #666; color:#fff; padding:6px 12px; font-family:monospace; font-size:12px; z-index:1000; pointer-events:none; box-shadow: 2px 2px 5px rgba(0,0,0,0.5); border-radius:4px;";
-                    document.body.appendChild(tt);
-                }
-
-                const input = document.getElementById('code-input');
-                
-                // Hide tooltip on normal click
-                window.addEventListener('click', () => document.getElementById('doc-tooltip').style.display='none');
-                
-                // Context Menu Handler
-                input.addEventListener('contextmenu', (e) => {
-                    // Try to respect cursor position if supported, otherwise use click coordinates
-                    const pos = input.selectionStart;
-                    const val = input.value;
-                    
-                    // Helper: Find word boundaries around cursor
-                    // We look backwards for A-Z, 0-9, _, and . (for object.prop)
-                    let start = pos;
-                    while(start > 0 && /[a-zA-Z0-9_.]/.test(val[start-1])) start--;
-                    
-                    let end = pos;
-                    while(end < val.length && /[a-zA-Z0-9_.]/.test(val[end])) end++;
-                    
-                    const word = val.substring(start, end);
-                    
-                    if(DOCS[word]) {
-                        e.preventDefault(); // Stop browser menu
-                        const tt = document.getElementById('doc-tooltip');
-                        tt.innerText = DOCS[word];
-                        tt.style.left = e.clientX + 'px';
-                        tt.style.top = e.clientY + 'px';
-                        tt.style.display = 'block';
-                    }
-                });
+            if (user) {
+                // REDIRECT TO THE NEW FILE
+                window.location.href = "umbraartifex.html";
+            } else {
+                errorDiv.style.display = 'block';
             }
-        };
+        }
 
-        const vm = {
-            analyze: (src) => {
-                const lines = src.split('\n');
-                const errors = [];
-                lines.forEach((line, i) => {
-                    const l = line.trim();
-                    const ln = i + 1;
-                    if (!l || l.startsWith('//') || l.startsWith('/*')) return;
-                    if (/(?:if|while)\s*\((?:[^)]*[^!<>=\s])\s*=\s*(?![=])/.test(l)) errors.push(`Line ${ln}: Error - Assignment in condition. Did you mean '=='?`);
-                    if (/,\s*\)/.test(l)) errors.push(`Line ${ln}: Error - Trailing comma detected.`);
-                    else if (/,\s*,/.test(l)) errors.push(`Line ${ln}: Error - Empty argument detected.`);
-                    else if (/\(\s*,/.test(l)) errors.push(`Line ${ln}: Error - Function cannot start with a comma.`);
-                    if (/[a-zA-Z0-9_"')\]]$/.test(l)) {
-                        const isControl = /^(if|while|for|else|void|function|class|struct)/.test(l);
-                        const isBlockEnd = l === '}' || l === '};'; 
-                        if (!isControl && !isBlockEnd && !l.endsWith(';') && !l.endsWith('{')) errors.push(`Line ${ln}: Error - Missing semicolon ';'.`);
-                    }
-                });
-                return errors;
-            },
-            run: () => {
-                PROJECT.scripts[STATE.activeScript].content = document.getElementById('code-input').value;
-                const rawCode = PROJECT.scripts.map(s => s.content).join('\n');
-                const syntaxErrors = vm.analyze(rawCode);
-                if (syntaxErrors.length > 0) { ui.log("--- COMPILATION FAILED ---"); syntaxErrors.forEach(err => ui.log(err)); return; }
-                let src = rawCode.replace(/\(([^)]*)\)/g, (m,p) => '(' + p.replace(/\b(int|float|string|bool|void)\s+/g, '') + ')').replace(/\b(void|int|float|string|bool)\s+(?=\w+\s*\()/g, 'function ').replace(/\b(int|float|string|bool)\s+/g, 'var ');
-                try {
-                    const runMap = [...PROJECT.map];
-                    const runSpr = [...PROJECT.sprites];
-                    const fn = new Function('Trace','Graphics','Input','Map', src + '\nreturn {Init:typeof Init!="undefined"?Init:null,Update:typeof Update!="undefined"?Update:null,Draw:typeof Draw!="undefined"?Draw:null}');
-                    const cvs = document.getElementById('virtual-screen'); const ctx = cvs.getContext('2d');
-                    const pages = [document.createElement('canvas'), document.createElement('canvas'), document.createElement('canvas')];
-                    pages.forEach((p,i)=>{p.width=128;p.height=128;const x=p.getContext('2d'); const off=i*16384;for(let k=0;k<16384;k++){if(runSpr[off+k]){x.fillStyle=COLORS[runSpr[off+k]];x.fillRect(k%128,(k/128)|0,1,1)}} });
-                    const G = {
-                        Clear: c=>{ if(c===undefined) throw new Error("Clear: Missing color"); ctx.fillStyle=COLORS[c];ctx.fillRect(0,0,128,128)},
-                        Sprite: (id,x,y,scale=1,size=1)=>{ if(id===undefined || x===undefined || y===undefined) throw new Error("Sprite: Missing arguments"); for(let dy=0; dy<size; dy++) { for(let dx=0; dx<size; dx++) { const tid = id + (dy*16) + dx; const sheet = Math.floor(tid/256); if(sheet > 2) continue; const lid = tid%256; const sx = (lid%16)*8; const sy = Math.floor(lid/16)*8; ctx.drawImage(pages[sheet], sx, sy, 8, 8, x + (dx*8*scale), y + (dy*8*scale), 8*scale, 8*scale); } } },
-                        Text: (s,x,y,c)=>{ if(c===undefined) throw new Error("Text: Missing color"); ctx.fillStyle=COLORS[c]; s=String(s).toUpperCase(); let cx=x; for(let i=0;i<s.length;i++){ if(s[i]==' '){cx+=4;continue;} const g=FONT[s[i]]||FONT['?']; for(let r=0;r<5;r++){ if(g[r]&4)ctx.fillRect(cx,y+r,1,1); if(g[r]&2)ctx.fillRect(cx+1,y+r,1,1); if(g[r]&1)ctx.fillRect(cx+2,y+r,1,1); }cx+=4; } },
-                        Rect: (x,y,w,h,c)=>{ if(c===undefined) throw new Error("Rect: Missing color"); ctx.fillStyle=COLORS[c]; ctx.fillRect(x,y,w,h); },
-                        Line: (x0,y0,x1,y1,c)=>{ if(c===undefined) throw new Error("Line: Missing color"); ctx.strokeStyle=COLORS[c]; ctx.beginPath(); ctx.moveTo(x0,y0); ctx.lineTo(x1,y1); ctx.stroke(); }
-                    };
-                    const M = { Get: (x,y) => (x<0||x>=64||y<0||y>=32) ? 0 : runMap[y*64+x], Set: (x,y,id) => { if(x>=0&&x<64&&y>=0&&y<32) runMap[y*64+x]=id; }, Draw: (ox,oy) => { for(let y=0;y<32;y++)for(let x=0;x<64;x++){ const t=runMap[y*64+x]; if(t){ const s=Math.floor(t/256); const l=t%256; const sx=(l%16)*8,sy=(l/16|0)*8; if(s<3) ctx.drawImage(pages[s],sx,sy,8,8,ox+x*8,oy+y*8,8,8); } } } };
-                    const keys = {}; window.onkeydown = e => keys[e.key] = true; window.onkeyup = e => keys[e.key] = false;
-                    const I = { Key: k => !!keys[k] }; const T = m => ui.log(m);
-                    ui.log("Compiling..."); const game = fn(T,G,I,M); ui.log("Run OK.");
-                    document.getElementById('runtime-overlay').style.display='flex'; document.getElementById('runtime-overlay').focus();
-                    if(game.Init) game.Init();
-                    const loop = setInterval(()=>{ try { if(game.Update)game.Update(); if(game.Draw)game.Draw(); } catch(runErr) { clearInterval(loop); ui.log("Runtime Error: " + runErr.message); document.getElementById('runtime-overlay').style.display='none'; } }, 16);
-                    const stopHandler = e => { if(e.key==='Escape'){ clearInterval(loop); document.getElementById('runtime-overlay').style.display='none'; document.getElementById('runtime-overlay').removeEventListener('keydown', stopHandler); } };
-                    document.getElementById('runtime-overlay').addEventListener('keydown', stopHandler);
-                } catch(e) { let lineInfo = ""; const stackLines = e.stack ? e.stack.split('\n') : []; const loc = stackLines.find(l => l.includes('anonymous>:') || l.includes('eval:')); if(loc) { const match = loc.match(/:(\d+):\d+/); if(match) lineInfo = ` (Line ${Math.max(1, parseInt(match[1]) - 2)})`; } ui.log("Code Error" + lineInfo + ": " + e.message); }
-            },
-            cmd: (el) => { if(el.value.toLowerCase()==='run') vm.run(); else if(el.value.toLowerCase()==='reset') { document.getElementById('terminal-out').innerHTML=''; ui.log("Terminal Cleared."); } else ui.log("Unknown cmd"); el.value=''; }
-        };
-
-        const project = {
-            new: () => { PROJECT = JSON.parse(JSON.stringify(DEFAULT_PROJ)); ui.init(); },
-            loadFromFile: (input) => { const file = input.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = (e) => { PROJECT = JSON.parse(e.target.result); if(PROJECT.sprites.length === 16384) { const newArr = new Array(16384*3).fill(0); for(let i=0;i<16384;i++) newArr[i] = PROJECT.sprites[i]; PROJECT.sprites = newArr; ui.log("Migrated legacy project."); } ui.init(); }; reader.readAsText(file); input.value = ''; },
-            rename: () => { const n = prompt("New Project Name:", PROJECT.name); if(n) { PROJECT.name = n; document.getElementById('project-label').innerText = PROJECT.name; } },
-            save: async () => { PROJECT.scripts[STATE.activeScript].content = document.getElementById('code-input').value; const content = JSON.stringify(PROJECT); try { if (window.showSaveFilePicker) { const handle = await window.showSaveFilePicker({ suggestedName: PROJECT.name + ".uap", types: [{ description: 'Umbra Artifex Project', accept: {'application/json': ['.uap']} }] }); const writable = await handle.createWritable(); await writable.write(content); await writable.close(); ui.log("Saved: " + handle.name); } else { const b=new Blob([content],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download=PROJECT.name+".uap"; a.click(); } } catch (e) { console.log("Save cancelled"); } },
-            export: async () => { PROJECT.scripts[STATE.activeScript].content = document.getElementById('code-input').value; const code = PROJECT.scripts.map(s=>s.content).join('\n').replace(/\(([^)]*)\)/g, (m,p) => '(' + p.replace(/\b(int|float|string|bool|void)\s+/g, '') + ')').replace(/\b(void|int|float|string|bool)\s+(?=\w+\s*\()/g, 'function ').replace(/\b(int|float|string|bool)\s+/g, 'var ');
-                const exportHTML = `<!DOCTYPE html><html><head><title>${PROJECT.name}</title><style>body{background:#111;display:flex;height:100vh;justify-content:center;align-items:center;margin:0}canvas{width:512px;height:512px;image-rendering:pixelated;border:1px solid #333}</style></head><body><canvas id="c" width="128" height="128"></canvas><script>const P=${JSON.stringify(PROJECT)};const C=${JSON.stringify(COLORS)};const F=${JSON.stringify(FONT)};const cv=document.getElementById('c');const ctx=cv.getContext('2d');const k={};window.onkeydown=e=>k[e.key]=1;window.onkeyup=e=>k[e.key]=0; const pg=[]; for(let i=0;i<3;i++){const c=document.createElement('canvas');c.width=128;c.height=128;const x=c.getContext('2d');const o=i*16384;for(let j=0;j<16384;j++){if(P.sprites[o+j]){x.fillStyle=C[P.sprites[o+j]];x.fillRect(j%128,(j/128)|0,1,1)}}pg.push(c);} const G={Clear:c=>{ctx.fillStyle=C[c];ctx.fillRect(0,0,128,128)}, Sprite:(id,x,y,sc=1,sz=1)=>{for(let dy=0;dy<sz;dy++)for(let dx=0;dx<sz;dx++){const tid=id+(dy*16)+dx;const s=Math.floor(tid/256);if(s<3){const l=tid%256;const sx=(l%16)*8;const sy=Math.floor(l/16)*8;ctx.drawImage(pg[s],sx,sy,8,8,x+dx*8*sc,y+dy*8*sc,8*sc,8*sc)}}}, Rect:(x,y,w,h,c)=>{ctx.fillStyle=C[c];ctx.fillRect(x,y,w,h)},Text:(s,x,y,c)=>{ctx.fillStyle=C[c];s=String(s).toUpperCase();let cx=x;for(let i=0;i<s.length;i++){if(s[i]==' '){cx+=4;continue;}const g=F[s[i]]||F['?'];for(let r=0;r<5;r++){if(g[r]&4)ctx.fillRect(cx,y+r,1,1);if(g[r]&2)ctx.fillRect(cx+1,y+r,1,1);if(g[r]&1)ctx.fillRect(cx+2,y+r,1,1);}cx+=4}}}; const M={Get:(x,y)=>(x<0||x>=64||y<0||y>=32)?0:P.map[y*64+x],Draw:(ox,oy)=>{for(let y=0;y<32;y++)for(let x=0;x<64;x++){const t=P.map[y*64+x];if(t){const s=Math.floor(t/256);const l=t%256;const sx=(l%16)*8,sy=(l/16|0)*8;if(s<3)ctx.drawImage(pg[s],sx,sy,8,8,ox+x*8,oy+y*8,8,8)}}}}; try{const fn=new Function('Trace','Graphics','Input','Map','${code.replace(/'/g,"\\'").replace(/\n/g,"\\n")}\\nreturn {Init:typeof Init!="undefined"?Init:null,Update:typeof Update!="undefined"?Update:null,Draw:typeof Draw!="undefined"?Draw:null}'); const g=fn(console.log,G,{Key:key=>!!k[key]},M);if(g.Init)g.Init();setInterval(()=>{if(g.Update)g.Update();if(g.Draw)g.Draw()},16);}catch(e){alert(e)}<\/script></body></html>`;
-                try { if (window.showSaveFilePicker) { const handle = await window.showSaveFilePicker({ suggestedName: PROJECT.name + ".html", types: [{ description: 'HTML Game', accept: {'text/html': ['.html']} }] }); const writable = await handle.createWritable(); await writable.write(exportHTML); await writable.close(); ui.log("Exported: " + handle.name); } else { const b=new Blob([exportHTML],{type:'text/html'}); const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download=PROJECT.name+".html"; a.click(); } } catch (e) { console.log("Export cancelled"); }
-            },
-            close: () => { if(confirm("Close?")) { PROJECT = null; document.getElementById('start-screen').style.display = 'flex'; document.getElementById('code-input').value = ""; document.getElementById('code-highlight').innerHTML = ""; document.getElementById('project-label').innerText = "Untitled"; document.getElementById('view-sprite').innerHTML = ""; document.getElementById('view-map').innerHTML = ""; } }
-        };
-        
-        // Initialize Documentation System
-        setTimeout(editor.initDocs, 100);
+        document.addEventListener('keypress', (e) => { if(e.key === 'Enter') handleLogin() });
     </script>
 </body>
 </html>
